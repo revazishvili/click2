@@ -1,0 +1,122 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+public class ReactionTestGame extends JFrame implements ActionListener {
+    private JButton reactionButton;
+    private JLabel instructionLabel;
+    private JLabel bestTimeLabel;
+    private JLabel lastTimesLabel;
+    private long startTime;
+    private long bestTime = Long.MAX_VALUE;
+    private List<Long> lastTimes = new ArrayList<>();
+    private final int MAX_RESULTS = 5;
+    private int playerCount = 2;
+    private int currentPlayer = 1;
+
+    public ReactionTestGame() {
+        // ფანჯრის სათაურის დაყენება
+        setTitle("სწრაფი რეაქციის თამაში");
+        // ფანჯრის ზომის დაყენება
+        setSize(400, 300);
+        // ფანჯრის დახურვის ქცევის დაყენება
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // ფანჯრის განლაგების ცენტრში დაყენება
+        setLocationRelativeTo(null);
+
+        // კონტეინერის განლაგების მენეჯერის დაყენება
+        setLayout(new BorderLayout());
+
+        // ინსტრუქციის ეტიკეტის შექმნა
+        instructionLabel = new JLabel("მოემზადეთ და დაელოდეთ ღილაკის გამოჩენას...", SwingConstants.CENTER);
+        add(instructionLabel, BorderLayout.NORTH);
+
+        // საუკეთესო დროის ეტიკეტის შექმნა
+        bestTimeLabel = new JLabel("საუკეთესო დრო: ჯერ არ არის დაფიქსირებული", SwingConstants.CENTER);
+        add(bestTimeLabel, BorderLayout.CENTER);
+
+        // ბოლო დროების ეტიკეტის შექმნა
+        lastTimesLabel = new JLabel("ბოლო შედეგები: ", SwingConstants.CENTER);
+        add(lastTimesLabel, BorderLayout.EAST);
+
+        // რეაქციის ღილაკის შექმნა
+        reactionButton = new JButton("დაჭირეთ რაც შეიძლება სწრაფად!");
+        reactionButton.setVisible(false);
+        reactionButton.addActionListener(this);
+        add(reactionButton, BorderLayout.SOUTH);
+
+        // თამაშის დაწყება
+        startGame();
+    }
+
+    private void startGame() {
+        // შემთხვევითი დროის შემდეგ ღილაკის გამოჩენა
+        Random random = new Random();
+        int delay = 2000 + random.nextInt(5000); // 2-დან 7 წამამდე
+
+        Timer timer = new Timer(delay, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                reactionButton.setVisible(true);
+                startTime = System.currentTimeMillis();
+                instructionLabel.setText("მოთამაშე " + currentPlayer + ", დაჭერეთ ღილაკი რაც შეიძლება სწრაფად!");
+            }
+        });
+        timer.setRepeats(false);
+        timer.start();
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == reactionButton) {
+            long reactionTime = System.currentTimeMillis() - startTime;
+            lastTimes.add(reactionTime);
+            if (lastTimes.size() > MAX_RESULTS) {
+                lastTimes.remove(0);
+            }
+            updateLastTimesLabel();
+
+            if (reactionTime < bestTime) {
+                bestTime = reactionTime;
+                bestTimeLabel.setText("საუკეთესო დრო: " + bestTime + " მილიწამი");
+            }
+
+            instructionLabel.setText("მოთამაშე " + currentPlayer + ", თქვენი რეაქციის დროა: " + reactionTime + " მილიწამი.");
+            reactionButton.setVisible(false);
+
+            // მოთამაშეების შეცვლა
+            currentPlayer = (currentPlayer % playerCount) + 1;
+
+            // ახალი თამაშის დაწყება 3 წამის შემდეგ
+            Timer timer = new Timer(3000, new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    instructionLabel.setText("მოემზადეთ და დაელოდეთ ღილაკის გამოჩენას...");
+                    startGame();
+                }
+            });
+            timer.setRepeats(false);
+            timer.start();
+        }
+    }
+
+    private void updateLastTimesLabel() {
+        StringBuilder sb = new StringBuilder("<html>ბოლო შედეგები:<br>");
+        for (long time : lastTimes) {
+            sb.append(time).append(" მილიწამი<br>");
+        }
+        sb.append("</html>");
+        lastTimesLabel.setText(sb.toString());
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                new ReactionTestGame().setVisible(true);
+            }
+        });
+    }
+}
